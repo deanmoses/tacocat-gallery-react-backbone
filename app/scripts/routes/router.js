@@ -1,6 +1,5 @@
 // tell JSHint to assume existence of these global vars
-/*global TacocatGalleryReactBackbone, Backbone*/
-
+/*global app, Backbone*/
 
 
 /**
@@ -8,12 +7,12 @@
  *
  * Decides what happens when various URLs in the app are hit.
  */
-TacocatGalleryReactBackbone.Routers = TacocatGalleryReactBackbone.Routers || {};
+app.Routers = app.Routers || {};
 
 (function () {
     'use strict';
 
-    TacocatGalleryReactBackbone.Routers.Router = Backbone.Router.extend({
+    app.Routers.Router = Backbone.Router.extend({
     
 		/**
 		 * Define the application's routes.
@@ -29,49 +28,135 @@ TacocatGalleryReactBackbone.Routers = TacocatGalleryReactBackbone.Routers || {};
 			'*path': 'notFound'
 		},
 		
-		notFound: function () {
-			console.log("Backbone route: notFound");
+		/**
+		 * Show an album page
+		 */
+		viewAlbum: function(path) {
+			var _this = this;
+			this.wait();
 			
-			var todos = new Backbone.Collection([
-				{ text: 'Dishes!', dueDate: new Date() },
-				{ text: 'Fishes!', dueDate: new Date() },
-				{ text: 'Wishes!', dueDate: new Date() }
-			]);
+			// regularize path by getting rid of any preceding or trailing slashes
+			path = this.normalizePath(path);
 			
-			React.renderComponent(MainLayout({todos:todos}), document.getElementById('root'));
+			console.log("Router.viewAlbum - path:", path);
+						
+			// fetch album, either from cache or from server
+			app.getAlbum(path)
+			.fail(function(xhr, options) {
+				console.log('Error retrieving album [' + path + ']. Error: ', xhr, options);
+			})
+			.done(function(album) {
+				console.log('Router.viewAlbum() - path [', path, '] album:', album);
+				var data = {
+					pageType: "album",
+					album: album
+				};
+				var component = _this.getAlbumComponent(album.attributes.albumType, data);
+				React.renderComponent(component, _this.getRootElement());
+			})
+			.always(function(){
+				_this.unwait();
+			});
 		},
 		
-		viewAlbum: function() {
-			console.log("Backbone route: album");
-			
-			var album = {
-				albumType: "year"
-			};
-			
-			var data = {
-				pageType: "album",
-				pageSubtype: "album-" + album.albumType,
-				album: album
-			};
-			
-			React.renderComponent(MainLayout(data), document.getElementById('root'));
+		getAlbumComponent: function(albumType, data) {
+			switch(albumType) {
+				case 'root': return RootAlbumPage(data);
+				case 'week': return WeekAlbumPage(data);
+				case 'year': return YearAlbumPage(data);
+				default: throw 'Unrecognized album type: [' + albumType + ']';
+			}
 		},
 		
+		/**
+		 * Show a photo page
+		 */
 		viewPhoto: function() {
-			console.log("Backbone route: photo");
+			var _this = this;
+			this.wait();
 			
-			var album = {
-				albumType: "photo"
-			};
+			var pathParts = path.split('/');
+			var photoId = pathParts.pop();
+			var albumPath = pathParts.join('/');
 			
-			var data = {
-				pageType: "photo",
-				pageSubtype: "album-" + album.albumType,
-				album: album
-			};		
+			console.log('Router.viewPhoto: ' + photoId + ' in album ' + albumPath);
 		
-			React.renderComponent(PhotoAlbum(data), document.getElementById('root'));
-		}
+			// fetch the album, either from cache or from server
+			app.getAlbum(albumPath)
+				.fail(function(xhr, options) {
+					console('Router.viewPhoto() couldn\'t find album ' + path + '. Error: ', xhr, options);
+				})
+				.done(function(album) {
+					//console.log('Router.viewPhoto() got album ' + albumPath + ' for photo ' + photoId + '.  Album: ' , album);
+			
+					var photo = album.getPhotoByPathComponent(photoId);
+					if (!photo) {
+						throw 'No photo with ID ' + photoId;
+					}
+					console.log('Router.viewPhoto() got photo ' + photoId, photo);
+					
+					// set the photo's album on the photo so the view can use that info
+					photo.album = album.attributes;
+					photo.nextPhoto = album.getNextPhoto(photoId);
+					photo.prevPhoto = album.getPrevPhoto(photoId);
+					photo.orientation = (photo.height > photo.width) ? 'portrait' : 'landscape';
+					
+					var data = {
+						pageType: "photo",
+						photo: photo,
+						album: album
+					};		
+				
+					React.renderComponent(PhotoAlbum(data), _this.getRootElement());
+				})
+				.always(function(){
+					_this.unwait();
+				});
+		},
+		
+		/**
+		 * Unrecognized URL
+		 */
+		notFound: function (path) {
+			console.log("Backbone route: notFound, path: ", path);
+			
+			// retrieve the root album
+			this.viewAlbum('');
+		},
+
+		/**
+		 * Helper method to normalize paths by removing preceding or trailing slashes
+		 */
+		normalizePath: function(path) {
+			if (!path) {
+				return '';
+			}
+			
+			// strip any trailing slash
+			path = path.replace(/\/$/, '');
+	
+			// Regularize path by getting rid of any preceding or trailing slashes
+			var pathParts = path.split('/');
+			return pathParts.join('/');
+		},
+		
+		/**
+		 * Helper method to get the root element that all views / pages are displayed in
+		 */
+		getRootElement: function() {
+			return document.getElementById('root');
+		},
+		 
+		 /**
+		  * Put the UI in 'waiting' state, appropriate for when it's fetching data.
+		  */
+		wait: function() {
+			$('#waiting').addClass('on');
+		},
+		
+		unwait: function() {
+			$('#waiting').removeClass('on');
+		},
     });
 
 })();

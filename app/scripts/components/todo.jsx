@@ -1,133 +1,57 @@
 /** @jsx React.DOM */
 
-
-var TodoListItem = React.createClass({
-
-    getInitialState: function () {
-        this.props.todo.on('change', function (model) {
-            this.setState({ todo: _.clone(model.attributes) });
-        });
-        
-        return { todo: _.clone(this.props.todo.attributes) };
-    },
-
-    render: function () {
-    	console.log("TodoListItem.render()", this.state.todo.text);
-        return <li><a href={'#' + this.state.todo.text}>{this.state.todo.text}</a><span>{this.state.todo.dueDate}</span></li>;
-    }
-});
-
-
-var TodoList = React.createClass({
-
-	propTypes: {
-       todos: React.PropTypes.object.isRequired
-	},
-
-	getInitialState: function () {
-      var updateState = function () {
-        this.setState({ todos: _.clone(this.props.todos.models) });
-      };
-      
-      this.props.todos.on('reset', updateState, this);
-      this.props.todos.on('add', updateState, this);
-      this.props.todos.on('remove', updateState, this);
-      
-      return { todos: _.clone(this.props.todos.models) };
-    },
-    
-    render: function () {    
-        var todos = this.state.todos.map(function (todo) {
-            return <TodoListItem todo={todo} />;
-        });
-
-        return <ul>{todos}</ul>;
-    }
-});
-
-/*
-	Layout for most pages of the app
- */
-var MainLayout = React.createClass({
+var RootAlbumPage = React.createClass({
 	render: function() {
-		var pageType = "album-week";
-		var pageTemplate = this.getPageTemplate(pageType);
-
-		return(
-			<div>{pageTemplate}</div>
-		);
-	},
-	
-	getPageTemplate: function(pageType) {
-		switch(pageType) {
-			case "album-root": return <WeekAlbum/>;
-			case "album-week": return <WeekAlbum/>;
-			default: console.log("Unrecognized pageType: ", pageType);
-		}
-	}	
-	
-});
-
-
-
-var RootAlbum = React.createClass({
-	render: function() {
-		var fulltitle = "Some Year Album Title";
-		var description = "ROOT DESCRIPTION GOES HERE";
+		var a = this.props.album.attributes;
 		return (
 			<div>
-				<HeaderTitle title="Dean, Lucie, Felix and Milo Moses" />
-				<AlbumDescription description={description}/>
-				<FirstsAndThumbs/>
+				<HeaderTitle title={a.fulltitle} />
+				<AlbumDescription description={a.description}/>
+				<FirstsAndThumbs album={this.props.album}/>
 			</div>
 		);
 	}
 });
 
 
-var YearAlbum = React.createClass({
+var YearAlbumPage = React.createClass({
 	render: function() {
-		var parentAlbumPath = "/path/to/the/root";
-		var fulltitle = "Some Year Album Title";
-		var description = "YEAR DESCRIPTION GOES HERE";
+		var a = this.props.album.attributes;
 		return (
 			<div>
-				<HeaderTitle href={parentAlbumPath} title={fulltitle} />
+				<HeaderTitle href={a.parentAlbumPath} title={a.fulltitle} />
 				<HeaderButtons>
-					<UpButton href={parentAlbumPath} title={parentAlbumPath} />
+					<UpButton href={a.parentAlbumPath} title={a.parentAlbumPath} />
 				</HeaderButtons>
-				<AlbumDescription description={description}/>
-				<FirstsAndThumbs/>
+				<AlbumDescription description={a.description}/>
+				<FirstsAndThumbs album={this.props.album}/>
 			</div>
 		);
 	}
 });
 
 
-var WeekAlbum = React.createClass({
+var WeekAlbumPage = React.createClass({
 	render: function() {
-		var parentAlbumPath = "/path/to/a/year";
-		var fulltitle = "Some Week Album Title";
-		var description = "WEEK DESCRIPTION GOES HERE";
+		var a = this.props.album.attributes;
 		return (
 			<div>
-				<HeaderTitle href={parentAlbumPath} title={fulltitle} />
+				<HeaderTitle href={a.parentAlbumPath} title={a.fulltitle} />
 				<HeaderButtons>
-					<UpButton href={parentAlbumPath} title={parentAlbumPath} />
+					<UpButton href={a.parentAlbumPath} title={a.parentAlbumPath} />
 				</HeaderButtons>
-				<AlbumDescription description={description}/>
-				<FirstsAndThumbs/>
+				<AlbumDescription description={a.description}/>
+				<FirstsAndThumbs album={this.props.album}/>
 			</div>
 		);
 	}
 });
 
 
-var PhotoAlbum = React.createClass({
+var PhotoPage = React.createClass({
 	render: function() {
 		var parentAlbumPath = "/path/to/album";
 		var fulltitle = "Some Photo Title";
-		var description = "PHOTO DESCRIPTION GOES HERE";
 		return (
 			<div>
 				<HeaderTitle title={fulltitle} />
@@ -140,20 +64,31 @@ var PhotoAlbum = React.createClass({
 						<NextButton href={this.props.nextPhoto} />
 					</div>
 				</HeaderButtons>
-				<div className="container-fluid photo-body">
-					<section className="col-md-3">
-						<h2 className="hidden">Caption</h2>
-					    <span className="caption">{description}</span>
-					</section>
-					<section className="col-md-9">
-						<h2 className="hidden">Photo</h2>
-						<img src="{{photo.fullSizeImage.url}}" style="width: 100%; max-width: {{photo.width}}px; max-height: {{photo.height}}px" />
-					</section>
-				</div>
+				<PhotoPageBody />
 			</div>
 		);
 	}
 });
+
+
+var PhotoPageBody = React.createClass({
+	render: function() {
+		var description = "PHOTO DESCRIPTION GOES HERE";
+		return (
+			<div className="container-fluid photo-body">
+				<section className="col-md-3">
+					<h2 className="hidden">Caption</h2>
+				    <span className="caption">{description}</span>
+				</section>
+				<section className="col-md-9">
+					<h2 className="hidden">Photo</h2>
+					<img src="{{photo.fullSizeImage.url}}" style="width: 100%; max-width: {{photo.width}}px; max-height: {{photo.height}}px" />
+				</section>
+			</div>
+		);
+	}
+});
+
 
 
 //
@@ -245,7 +180,6 @@ var Button = React.createClass({
 	}
 });
 
-
 var AlbumDescription = React.createClass({
 	render: function() {
 		return (
@@ -258,6 +192,7 @@ var AlbumDescription = React.createClass({
 });
 
 var FirstsAndThumbs = React.createClass({
+	var a = this.props.album.attributes;
 	render: function() {
 		return (
 			<div className="container">

@@ -4,7 +4,7 @@
 describe('Album Model', function () {
 
     beforeEach(function () {
-        this.AlbumModel = new TacocatGalleryReactBackbone.Models.Album();
+        this.AlbumModel = new app.Models.Album();
     });
 
 });

@@ -4,7 +4,7 @@
 describe('Router Router', function () {
 
     beforeEach(function () {
-        this.RouterRouter = new TacocatGalleryReactBackbone.Routers.Router();
+        this.RouterRouter = new app.Routers.Router();
     });
 
     it('index route', function(){
