@@ -6,8 +6,7 @@ var RootAlbumPage = React.createClass({
 		return (
 			<div>
 				<HeaderTitle title={a.fulltitle} />
-				<AlbumDescription description={a.description}/>
-				<FirstsAndThumbs album={this.props.album}/>
+				<Thumbnails album={this.props.album}/>
 			</div>
 		);
 	}
@@ -23,7 +22,6 @@ var YearAlbumPage = React.createClass({
 				<HeaderButtons>
 					<UpButton href={a.parentAlbumPath} title={a.parentAlbumPath} />
 				</HeaderButtons>
-				<AlbumDescription description={a.description}/>
 				<FirstsAndThumbs album={this.props.album}/>
 			</div>
 		);
@@ -41,7 +39,7 @@ var WeekAlbumPage = React.createClass({
 					<UpButton href={a.parentAlbumPath} title={a.parentAlbumPath} />
 				</HeaderButtons>
 				<AlbumDescription description={a.description}/>
-				<FirstsAndThumbs album={this.props.album}/>
+				<Thumbnails album={this.props.album}/>
 			</div>
 		);
 	}
@@ -192,47 +190,89 @@ var AlbumDescription = React.createClass({
 });
 
 var FirstsAndThumbs = React.createClass({
-	var a = this.props.album.attributes;
 	render: function() {
+		var a = this.props.album.attributes;
 		return (
 			<div className="container">
 				<section className="firsts">
 					FIRSTS GO HERE
 				</section>
-				<section className="thumbnails">
-					<h1 className="hidden">Pictures</h1>
-					THUMBS GO HERE
-				</section>
+				<MonthThumbs album={this.props.album}/>
 			</div>
 		);
 	}
 });
 
-var Thumbnails = React.createClass({
-    render: function () {    
-        var thumbs = this.props.children.map(function (child) {
-            return <Thumbnail item={child} />;
+var MonthThumbs = React.createClass({
+    render: function () {
+    	var a = this.props.album.attributes;
+    	
+        var months = a.childAlbumsByMonth.map(function (child) {
+            return <MonthThumb month={child} />;
         });
 
         return (
-        	<div>{thumbs}</div>
+        	<div>
+        		{months}
+			</div>
         );
     }
 });
 
+var MonthThumb = React.createClass({
+    render: function () {
+    	var month = this.props.month;
+        var thumbs = month.albums.map(function (child) {
+            return <Thumbnail item={child} />;
+        });
+
+        return (
+        	<section className="month">
+				<h1>{month.monthName}</h1>
+				{thumbs}
+			</section>
+        );
+    }
+});
+
+var Thumbnails = React.createClass({
+    render: function () {
+    	var a = this.props.album.attributes;
+        var thumbs = a.children.forEach(function (child) {
+            return <Thumbnail item={child} />;
+        });
+
+        return (
+        	<section className="thumbnails">
+				<h1 className="hidden">Pictures</h1>
+				{thumbs}
+			</section>
+        );
+    }
+});
 
 var Thumbnail = React.createClass({
 	render: function() {
-		var width = width + 'px';
+		var item = this.props.item;
+		var url = '#' + item.url;
+		var width = item.thumbnail.width;
+		var height = item.thumbnail.height;
+		var title = item.title;
+		var summary = item.summary;
+		width = width + 'px';
+		height = height + 'px';
+		var style = {
+			width: width,
+		}
 		return(
 			<span className="thumbnail">
 				<a href={url}>
-					<img src={url} width={width} height={height} alt={title}/>
+					<img src={item.thumbnail.url} width={width} height={height} alt={title}/>
 				</a>
 				<a href={url}>
-					<span className="thumb-caption" style={'width:'+width}>{title}</span>
+					<span className="thumb-caption" style={style}>{title}</span>
 				</a>
-				<p style={'width:'+width}>{summary}</p>
+				{summary ? <p style={style}>{summary}</p> : ''}
 			</span>
 		);
 	}
