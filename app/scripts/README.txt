@@ -1,0 +1,1 @@
+This directory contains the app's custom javascript.  Third party libraries are elsewhere.
