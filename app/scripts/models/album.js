@@ -90,32 +90,21 @@ app.Models = app.Models || {};
 		 * Return the URL location of the album's JSON
 		 */
 		url: function() {
-			// if not mock, return real URL
-			if (!app.mock) {
-				// Album IDs are of this format:
-				//   2013
-				//   2013/09-08
-				//   2013/09-08/someSubAlbum
-				var year = this.id.split('/')[0];
-				
-				// if the year is 2007 or greater, the album's in Gallery2
-				if (year >= 2007) {
-					return 'http://tacocat.com/pictures/main.php?g2_view=json.Album&album=' + this.id;
-				}
-				// 2006 and earlier years are in static JSON
-				// at /oldpix/year/month-day/album.json
-				// such as /oldpix/2001/12-31/album.json
-				else {
-					return 'http://tacocat.com/oldpix/' + this.id + '/album.json';
-				}
+			// Album IDs are of this format:
+			//   2013
+			//   2013/09-08
+			//   2013/09-08/someSubAlbum
+			var year = this.id.split('/')[0];
+			
+			// if the year is 2007 or greater, the album's in Gallery2
+			if (year >= 2007) {
+				return 'http://tacocat.com/pictures/main.php?g2_view=json.Album&album=' + this.id;
 			}
-			// else if it's a sub album with photos
-			else if (this.id.indexOf('/') >= 0) {
-				return 'mock/album.json.txt';
-			}
-			// else it's a year album
+			// 2006 and earlier years are in static JSON
+			// at /oldpix/year/month-day/album.json
+			// such as /oldpix/2001/12-31/album.json
 			else {
-				return 'mock/album-year.json.txt';
+				return 'http://tacocat.com/oldpix/' + this.id + '/album.json';
 			}
 		},
         
@@ -184,7 +173,7 @@ app.Models = app.Models || {};
         parse: function(album, options)  {
             var that = this;
             
-            var path = album.pathComponent;
+            var path = this.attributes.fullPath;
 			console.log('Album.parse()', path, album);
 				
 			//
@@ -198,7 +187,7 @@ app.Models = app.Models || {};
 			//	
 			// Figure out what type of album it is:  root, year or week
 			//
-			
+						
 			// no path: it's the root album
 			if (!path || path.length <= 0) {
 				album.albumType = 'root';
@@ -262,6 +251,30 @@ app.Models = app.Models || {};
 				// like v/2013 or v/2013/12-31/
 				album.url = 'v/' + album.pathComponent;
 			}
+			
+			//
+			// If album is the root album...
+			//
+			if (album.albumType === 'root') {
+				// Some of the years are outside album.children for some reason
+				// When I get my server project going, I should figure this out and fix.
+				// But for now, just manually migrate them to album.children.
+				if (album[2001]) {
+					album.children[2001] = album[2001];
+				}
+				
+				if (album[2002]) {
+					album.children[2002] = album[2002];
+				}
+				
+				// The thumbnails are in an object like 
+				//{2001: {}, 2002: {}, ...}
+				// We need them in an array (basically remove the keys)
+				album.children = _.map(album.children, function(value) {
+					return value;					
+				});
+			}
+			
 								
 			//
 			// If album is a year album...
@@ -336,7 +349,7 @@ app.Models = app.Models || {};
 								
 				console.log("childAlbumsByMonth", album.childAlbumsByMonth);
 			}
-						
+							
 			//
 			// Do some munging on the album's photos
 			//

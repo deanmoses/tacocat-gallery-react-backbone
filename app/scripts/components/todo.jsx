@@ -62,7 +62,7 @@ var PhotoPage = React.createClass({
 						<NextButton href={this.props.nextPhoto} />
 					</div>
 				</HeaderButtons>
-				<PhotoPageBody />
+				<PhotoPageBody photo={this.props.photo} />
 			</div>
 		);
 	}
@@ -71,16 +71,21 @@ var PhotoPage = React.createClass({
 
 var PhotoPageBody = React.createClass({
 	render: function() {
-		var description = "PHOTO DESCRIPTION GOES HERE";
+		var photo = this.props.photo;
+		var style = {
+			'width': '100%',
+			'max-width': photo.width,
+			'max-height': photo.height
+		};
 		return (
 			<div className="container-fluid photo-body">
 				<section className="col-md-3">
 					<h2 className="hidden">Caption</h2>
-				    <span className="caption">{description}</span>
+				    <span className="caption" dangerouslySetInnerHTML={{__html: photo.description}}/>
 				</section>
 				<section className="col-md-9">
 					<h2 className="hidden">Photo</h2>
-					<img src="{{photo.fullSizeImage.url}}" style="width: 100%; max-width: {{photo.width}}px; max-height: {{photo.height}}px" />
+					<img src={photo.fullSizeImage.url} style={style} />
 				</section>
 			</div>
 		);
@@ -183,7 +188,7 @@ var AlbumDescription = React.createClass({
 		return (
 			<section className="caption container">
 				<h1 className="hidden">Overview</h1>
-				{this.props.description}
+				<span className="caption" dangerouslySetInnerHTML={{__html: this.props.description}}/>
 			</section>
 		);
 	}
@@ -238,7 +243,8 @@ var MonthThumb = React.createClass({
 var Thumbnails = React.createClass({
     render: function () {
     	var a = this.props.album.attributes;
-        var thumbs = a.children.forEach(function (child) {
+    	
+        var thumbs = a.children.map(function (child) {
             return <Thumbnail item={child} />;
         });
 

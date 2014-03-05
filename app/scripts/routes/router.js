@@ -48,7 +48,6 @@ app.Routers = app.Routers || {};
 			.done(function(album) {
 				console.log('Router.viewAlbum() - path [', path, '] album:', album);
 				var data = {
-					pageType: "album",
 					album: album
 				};
 				var component = _this.getAlbumComponent(album.attributes.albumType, data);
@@ -71,7 +70,7 @@ app.Routers = app.Routers || {};
 		/**
 		 * Show a photo page
 		 */
-		viewPhoto: function() {
+		viewPhoto: function(path) {
 			var _this = this;
 			this.wait();
 			
@@ -84,10 +83,10 @@ app.Routers = app.Routers || {};
 			// fetch the album, either from cache or from server
 			app.getAlbum(albumPath)
 				.fail(function(xhr, options) {
-					console('Router.viewPhoto() couldn\'t find album ' + path + '. Error: ', xhr, options);
+					console('Router.viewPhoto() couldn\'t find album ' + albumPath + '. Error: ', xhr, options);
 				})
 				.done(function(album) {
-					//console.log('Router.viewPhoto() got album ' + albumPath + ' for photo ' + photoId + '.  Album: ' , album);
+					console.log('Router.viewPhoto() got album ' + albumPath + ' for photo ' + photoId + '.  Album: ' , album);
 			
 					var photo = album.getPhotoByPathComponent(photoId);
 					if (!photo) {
@@ -102,12 +101,11 @@ app.Routers = app.Routers || {};
 					photo.orientation = (photo.height > photo.width) ? 'portrait' : 'landscape';
 					
 					var data = {
-						pageType: "photo",
 						photo: photo,
 						album: album
 					};		
 				
-					React.renderComponent(PhotoAlbum(data), _this.getRootElement());
+					React.renderComponent(PhotoPage(data), _this.getRootElement());
 				})
 				.always(function(){
 					_this.unwait();
